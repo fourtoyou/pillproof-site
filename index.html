@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="PillProof — ตู้จ่ายยาอัจฉริยะสำหรับผู้สูงอายุ จ่ายซองยาทีละซองลงถาดรับ ยืนยันด้วยการคืนซอง แจ้งเตือนผ่าน LINE">
+<meta name="theme-color" content="#0E7C7B">
+<meta property="og:title" content="PillProof">
+<meta property="og:description" content="ตู้ที่ไม่ให้เลือกเอง เพราะตู้เลือกให้แล้ว — ตู้จ่ายยาสำหรับผู้สูงอายุ">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%230E7C7B%22/><rect x=%228%22 y=%229%22 width=%2216%22 height=%2214%22 rx=%222%22 fill=%22%23fff%22/><rect x=%2211%22 y=%2218%22 width=%2210%22 height=%223%22 rx=%221%22 fill=%22%230E7C7B%22/></svg>">
+<style>
+:root{color-scheme:light dark; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>PillProof</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --ground:#EFF2F1; --panel:#FFFFFF; --panel-2:#F4F7F6; --sunk:#E3E9E8;
+  --ink:#16262B; --ink-2:#48595E; --ink-3:#7B8A8F;
+  --line:#D6DFDD; --line-2:#E6EDEB;
+  --accent:#0E7C7B; --accent-2:#0A5C5C; --accent-soft:#D8EAE9;
+  --amber:#B0720C; --amber-soft:#F8EBD2;
+  --stage-a:#E7ECEB; --stage-b:#C6D2D1;
+  --shadow:0 1px 2px rgba(22,38,43,.05), 0 10px 30px rgba(22,38,43,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1416; --panel:#151E22; --panel-2:#1B2529; --sunk:#101819;
+    --ink:#E7EEEC; --ink-2:#A6B8B7; --ink-3:#778A8A;
+    --line:#27373B; --line-2:#1F2C30;
+    --accent:#3DB6B1; --accent-2:#63CFC9; --accent-soft:#113738;
+    --amber:#DFA martial; --amber-soft:#382C16;
+    --stage-a:#0A1011; --stage-b:#182226;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 12px 34px rgba(0,0,0,.4);
+  }
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --amber:#DFA84A; }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1416; --panel:#151E22; --panel-2:#1B2529; --sunk:#101819;
+  --ink:#E7EEEC; --ink-2:#A6B8B7; --ink-3:#778A8A;
+  --line:#27373B; --line-2:#1F2C30;
+  --accent:#3DB6B1; --accent-2:#63CFC9; --accent-soft:#113738;
+  --amber:#DFA84A; --amber-soft:#382C16;
+  --stage-a:#0A1011; --stage-b:#182226;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 12px 34px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans Thai","Leelawadee UI",system-ui,sans-serif;
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+.wrap{max-width:1060px; margin:0 auto; padding-inline:20px}
+
+/* ---------- top bar ---------- */
+.bar{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:20;
+  background:color-mix(in srgb,var(--panel) 90%,transparent);
+  border-bottom:1px solid var(--line); backdrop-filter:blur(10px);
+}
+.bar .wrap{display:flex; align-items:center; gap:16px; height:54px}
+.logo{display:flex; align-items:baseline; gap:8px; font-weight:700; letter-spacing:-.01em}
+.logo em{font-style:normal; color:var(--accent)}
+.logo span{font-size:11px; font-weight:500; color:var(--ink-3); letter-spacing:.04em}
+.bar nav{margin-left:auto; display:flex; gap:20px}
+.bar nav a{color:var(--ink-2); text-decoration:none; font-size:13.5px}
+.bar nav a:hover{color:var(--accent)}
+@media (max-width:720px){ .bar nav{display:none} }
+
+/* ---------- hero ---------- */
+.hero{padding-block:36px 8px}
+.hero .grid{display:grid; grid-template-columns:1fr 1fr; gap:36px; align-items:center}
+.eyebrow{
+  display:inline-block; font-size:11px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--accent); background:var(--accent-soft);
+  padding:4px 10px; border-radius:999px; margin-bottom:14px;
+}
+h1{
+  margin:0 0 14px; font-size:clamp(30px,5vw,46px); line-height:1.16;
+  letter-spacing:-.025em; text-wrap:balance;
+}
+.lede{margin:0 0 22px; font-size:16.5px; color:var(--ink-2); max-width:44ch}
+.cta{display:flex; gap:10px; flex-wrap:wrap}
+.btn{
+  display:inline-flex; align-items:center; gap:7px;
+  padding:10px 17px; border-radius:9px; font-size:14px; font-weight:500;
+  text-decoration:none; border:1px solid var(--line); background:var(--panel);
+  color:var(--ink); cursor:pointer; font-family:inherit;
+  transition:border-color .16s, background .16s, color .16s;
+}
+.btn:hover{border-color:var(--accent); color:var(--accent)}
+.btn.solid{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.solid:hover{background:var(--accent-2); border-color:var(--accent-2); color:#fff}
+.btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.viewer{
+  position:relative; border-radius:16px; overflow:hidden; border:1px solid var(--line);
+  background:radial-gradient(120% 110% at 50% 4%, var(--stage-a), var(--stage-b));
+  box-shadow:var(--shadow); aspect-ratio:4/5; max-width:100%;
+}
+#cv{display:block; width:100%; height:100%; touch-action:none; cursor:grab}
+#cv.dragging{cursor:grabbing}
+.vbadge{
+  position:absolute; left:12px; top:12px; font-size:11px; color:var(--ink-3);
+  background:color-mix(in srgb,var(--panel) 80%,transparent);
+  border:1px solid var(--line); border-radius:999px; padding:4px 10px;
+}
+.vsay{
+  position:absolute; left:12px; right:12px; bottom:12px;
+  background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent);
+  border-radius:3px 10px 10px 10px; padding:8px 12px; font-size:12.5px;
+  box-shadow:var(--shadow); opacity:0; transform:translateY(6px);
+  transition:opacity .25s, transform .25s; pointer-events:none;
+}
+.vsay.on{opacity:1; transform:none}
+.vsay b{display:block; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+
+@media (max-width:820px){
+  .hero .grid{grid-template-columns:1fr; gap:26px}
+  .viewer{aspect-ratio:1/1; order:-1}
+}
+
+/* ---------- sections ---------- */
+section{padding-block:44px; border-top:1px solid var(--line-2)}
+section > .wrap > h2{
+  margin:0 0 6px; font-size:24px; letter-spacing:-.018em; text-wrap:balance;
+}
+.sub{margin:0 0 26px; color:var(--ink-3); font-size:14.5px; max-width:60ch}
+
+/* problem figures */
+.figs{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+.fig{padding:18px 18px 16px; border-radius:12px; background:var(--panel); border:1px solid var(--line)}
+.fig strong{display:block; font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:600; letter-spacing:-.02em; color:var(--accent); line-height:1.1}
+.fig p{margin:6px 0 0; font-size:13.5px; color:var(--ink-2)}
+.fig cite{display:block; margin-top:8px; font-style:normal; font-size:11px; color:var(--ink-3)}
+@media (max-width:720px){ .figs{grid-template-columns:1fr} }
+
+/* flow steps */
+.flow{display:grid; grid-template-columns:repeat(5,1fr); gap:0; counter-reset:f}
+.fstep{
+  counter-increment:f; position:relative; padding:0 14px 0 0;
+}
+.fstep::before{
+  content:counter(f); display:grid; place-items:center;
+  width:26px; height:26px; border-radius:50%; margin-bottom:10px;
+  background:var(--accent); color:#fff; font-family:"IBM Plex Mono",monospace;
+  font-size:12px; font-weight:500;
+}
+.fstep::after{
+  content:""; position:absolute; left:26px; top:13px; right:0; height:1px; background:var(--line);
+}
+.fstep:last-child::after{display:none}
+.fstep h3{margin:0 0 4px; font-size:14.5px; font-weight:600}
+.fstep p{margin:0; font-size:13px; color:var(--ink-2)}
+@media (max-width:820px){
+  .flow{grid-template-columns:1fr; gap:16px}
+  .fstep{padding:0 0 0 38px}
+  .fstep::before{position:absolute; left:0; top:0; margin:0}
+  .fstep::after{left:13px; top:30px; right:auto; bottom:-16px; width:1px; height:auto}
+}
+
+/* comparison */
+.cmp{width:100%; border-collapse:collapse; font-size:14px}
+.cmp th, .cmp td{text-align:left; padding:11px 14px; border-bottom:1px solid var(--line-2); vertical-align:top}
+.cmp thead th{font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+.cmp td:first-child{color:var(--ink-3)}
+.cmp td:last-child{font-weight:500}
+.tblwrap{overflow-x:auto; background:var(--panel); border:1px solid var(--line); border-radius:12px}
+
+/* spec + bom split */
+.split{display:grid; grid-template-columns:1fr 1.25fr; gap:22px; align-items:start}
+@media (max-width:820px){ .split{grid-template-columns:1fr} }
+.card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 20px}
+.card h3{margin:0 0 12px; font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); font-weight:600}
+.kv{display:grid; grid-template-columns:auto 1fr; gap:7px 14px; font-size:13.5px}
+.kv dt{color:var(--ink-3)}
+.kv dd{margin:0; text-align:right; font-family:"IBM Plex Mono",monospace}
+.bomt{width:100%; border-collapse:collapse; font-size:13.5px}
+.bomt td{padding:6px 0; border-bottom:1px solid var(--line-2)}
+.bomt td:last-child{text-align:right; font-family:"IBM Plex Mono",monospace; white-space:nowrap}
+.bomt tr:last-child td{border-bottom:0; padding-top:10px; font-weight:600}
+.bomt em{display:block; font-style:normal; font-size:11px; color:var(--ink-3)}
+
+/* price */
+.price{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+.price div{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px}
+.price span{display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
+.price strong{display:block; font-family:"IBM Plex Mono",monospace; font-size:24px; font-weight:600; margin-top:4px}
+.price small{display:block; font-size:12.5px; color:var(--ink-2); margin-top:4px}
+@media (max-width:720px){ .price{grid-template-columns:1fr} }
+
+/* limits */
+.limits{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.limit{
+  padding:14px 16px; border-radius:10px; background:var(--panel-2);
+  border:1px solid var(--line-2); border-left:3px solid var(--amber);
+  font-size:13.5px; color:var(--ink-2);
+}
+.limit b{display:block; color:var(--ink); font-weight:600; margin-bottom:2px; font-size:14px}
+@media (max-width:720px){ .limits{grid-template-columns:1fr} }
+
+/* team + footer */
+.team{display:flex; gap:10px; flex-wrap:wrap}
+.member{
+  display:flex; align-items:baseline; gap:10px; padding:11px 16px;
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; font-size:14px;
+}
+.member span{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-3)}
+footer{padding-block:28px 40px; border-top:1px solid var(--line-2); color:var(--ink-3); font-size:12.5px}
+footer a{color:var(--accent); text-decoration:none}
+footer .wrap{display:flex; gap:14px; flex-wrap:wrap; align-items:center}
+footer .refs{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
+
+@media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important} }
+</style>
+
+</head>
+<body>
+<div class="bar">
+  <div class="wrap">
+    <div class="logo">Pill<em>Proof</em> <span>ต้นแบบ v7</span></div>
+    <nav>
+      <a href="#how">วิธีทำงาน</a>
+      <a href="#why">ทำไมเป็นถาดรับ</a>
+      <a href="#spec">สเปก</a>
+      <a href="#price">ราคา</a>
+      <a href="#limit">ข้อจำกัด</a>
+    </nav>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap grid">
+    <div>
+      <span class="eyebrow">ตู้จ่ายยาสำหรับผู้สูงอายุ</span>
+      <h1>ตู้ที่ไม่ให้เลือกเอง<br>เพราะตู้เลือกให้แล้ว</h1>
+      <p class="lede">
+        ถึงเวลา ตู้จ่ายซองยาของมื้อนั้นออกมาหนึ่งซองลงถาดรับ
+        ผู้สูงอายุไม่ต้องเลือกช่อง ไม่ต้องเอื้อมมือเข้าไปคว้า
+        และจะนับว่ากินแล้วก็ต่อเมื่อซองเปล่าถูกทิ้งคืน
+      </p>
+      <div class="cta">
+        <button class="btn solid" type="button" id="bGo">ลองสั่งจ่ายยา</button>
+        <a class="btn" href="https://claude.ai/artifact/28T6jwbdA5gkZdMy5YsYKK" target="_blank" rel="noopener">ดูกลไกภายในแบบละเอียด</a>
+      </div>
+    </div>
+    <div class="viewer">
+      <canvas id="cv"></canvas>
+      <div class="vbadge mono">286 × 283 × 119 mm</div>
+      <div class="vsay" id="say"><b>เสียงจากตู้</b><span id="sayTxt"></span></div>
+    </div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <h2>ปัญหาที่แก้</h2>
+    <p class="sub">ผู้สูงอายุที่กินยาหลายชนิดพร้อมกันมักจำไม่ได้ว่ากินไปแล้วหรือยัง เกิดได้ทั้งกินซ้ำจนเกินขนาด และลืมกินจนการรักษาไม่ต่อเนื่อง</p>
+    <div class="figs">
+      <div class="fig">
+        <strong>~50%</strong>
+        <p>ของผู้ป่วยโรคเรื้อรังกินยาไม่ตรงตามแพทย์สั่ง</p>
+        <cite>องค์การอนามัยโลก</cite>
+      </div>
+      <div class="fig">
+        <strong>21%</strong>
+        <p>ของอุปกรณ์ช่วยเตือนกินยาในตลาดเท่านั้นที่มีระบบล็อกเฉพาะมื้อที่ถึงเวลา</p>
+        <cite>JMIR Aging, 2023</cite>
+      </div>
+      <div class="fig">
+        <strong>0</strong>
+        <p>วิธีเดิมที่ยืนยันได้ว่ากินจริง — ทั้งกล่องแบ่งช่องและแอปตั้งเตือน รู้แค่ว่าเตือนไปแล้ว</p>
+        <cite>จากการสำรวจของทีม</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>ทำงานยังไง</h2>
+    <p class="sub">ทุกขั้นเกิดขึ้นในตัวตู้ ไม่ต้องรอคำสั่งจากเซิร์ฟเวอร์ ถ้าเน็ตหลุดก็ยังจ่ายยาและล็อกได้ตามปกติ</p>
+    <div class="flow">
+      <div class="fstep"><h3>ถึงเวลา</h3><p>นาฬิกาในตู้ปลุก ไฟช่องนั้นติด ตู้พูดเตือนเป็นภาษาไทย</p></div>
+      <div class="fstep"><h3>ดันซอง</h3><p>เซอร์โวดันซองล่างสุดออกจากรางทีละซอง ผ่านช่องที่สูงเท่าซองหนึ่งใบ</p></div>
+      <div class="fstep"><h3>ลงถาด</h3><p>ซองไหลตามรางเอียงมาที่ถาดรับด้านหน้า ระดับอก ไม่ต้องเอื้อม</p></div>
+      <div class="fstep"><h3>ปลดล็อก</h3><p>โซลินอยด์ถอนสลัก ฝาถาดพับลง ผู้ใช้หยิบซองได้</p></div>
+      <div class="fstep"><h3>คืนซอง</h3><p>ทิ้งซองเปล่าลงช่องคืน ระบบจับคู่จ่าย 1 คืน 1 แล้วแจ้ง LINE</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <h2>ทำไมต้องเป็นถาดรับ</h2>
+    <p class="sub">แบบร่างแรกของเราใช้ช่องแยกฝาให้ผู้ใช้เปิดหยิบเอง แต่พบข้อบกพร่องสี่ข้อที่การเปลี่ยนมาใช้รางจ่ายซองแก้ได้ทั้งหมด</p>
+    <div class="tblwrap">
+      <table class="cmp">
+        <thead><tr><th>ปัญหาของแบบเปิดฝาเอง</th><th>แบบถาดรับแก้อย่างไร</th></tr></thead>
+        <tbody>
+          <tr><td>ต้องเอื้อมมือเข้าไปคว้าซองบางในกล่องลึก ยากสำหรับคนมือสั่นหรือข้ออักเสบ</td><td>ซองมารอในถาดหน้าตู้ หยิบจากที่โล่ง</td></tr>
+          <tr><td>หยิบสองซองพร้อมกันได้ ระบบไม่รู้</td><td>ช่องจ่ายสูงเท่าซองหนึ่งใบ ออกได้ทีละซองเชิงกลไก</td></tr>
+          <tr><td>เปิดช่องผิดมื้อได้ถ้าล็อกพลาด</td><td>ไม่มีช่องให้เปิด ตู้เป็นคนเลือกให้</td></tr>
+          <tr><td>รู้แค่ว่าซองถูกเอาออก ไม่รู้ว่าฉีกกินจริงไหม</td><td>ต้องคืนซองเปล่าจึงนับว่าครบ วิธีเดียวกับที่ตู้จ่ายยาเชิงพาณิชย์ใช้</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:18px">
+      หลักคิดคือออกแบบให้ทำผิดไม่ได้ตั้งแต่ตัวกลไก ดีกว่าปล่อยให้ทำผิดแล้วค่อยเตือน
+      เพราะไม่ต้องพึ่งความจำของผู้ใช้ ซึ่งเป็นสิ่งที่ผู้ป่วยกลุ่มนี้มีจำกัดอยู่แล้ว
+    </p>
+  </div>
+</section>
+
+<section id="spec">
+  <div class="wrap">
+    <h2>สเปกและอุปกรณ์</h2>
+    <p class="sub">ทุกชิ้นหาซื้อได้ในไทย โครงตู้สั่งตัดอะคริลิกเลเซอร์จากไฟล์แบบที่ทีมวาดเอง</p>
+    <div class="split">
+      <div class="card">
+        <h3>โครงสร้าง</h3>
+        <dl class="kv">
+          <dt>ขนาดตู้</dt><dd>286 × 283 × 119 mm</dd>
+          <dt>วัสดุ</dt><dd>อะคริลิก 3 mm</dd>
+          <dt>ช่องเก็บยา</dt><dd>4 ราง (มื้อละราง)</dd>
+          <dt>ความจุต่อราง</dt><dd>7 ซอง</dd>
+          <dt>ช่องจ่าย</dt><dd>หนาซอง + 1 mm</dd>
+          <dt>ตัวประมวลผล</dt><dd>ESP32 + WiFi</dd>
+          <dt>แจ้งเตือน</dt><dd>LINE โดยตรง</dd>
+          <dt>ค่ารายเดือน</dt><dd>0 บาท</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <h3>รายการอุปกรณ์หลัก</h3>
+        <table class="bomt">
+          <tr><td>ESP32 DevKit V1<em>ตัวประมวลผล + WiFi</em></td><td>150 ฿</td></tr>
+          <tr><td>Micro Servo SG90 × 4<em>ดันซองออกจากราง</em></td><td>180 ฿</td></tr>
+          <tr><td>สลักล็อกไฟฟ้า 12 V<em>ล็อกฝาถาดรับ</em></td><td>65 ฿</td></tr>
+          <tr><td>DFPlayer Mini + ลำโพง 3 W<em>เสียงพูดภาษาไทย</em></td><td>200 ฿</td></tr>
+          <tr><td>ไมค์ INMP441<em>รับคำสั่งเสียง</em></td><td>80 ฿</td></tr>
+          <tr><td>IR × 3 · Reed × 2 · RTC<em>เซนเซอร์และนาฬิกา</em></td><td>109 ฿</td></tr>
+          <tr><td>ไฟเลี้ยง · ปุ่ม · สปริง · MOSFET<em>วงจรและกลไก</em></td><td>210 ฿</td></tr>
+          <tr><td>อะคริลิกตัดเลเซอร์ + ฉาก + สกรู<em>โครงตู้ทั้งหมด</em></td><td>260 ฿</td></tr>
+          <tr><td>รวมต้นทุนต่อชิ้น</td><td>1,254 ฿</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="price">
+  <div class="wrap">
+    <h2>ใครจ่ายเงิน</h2>
+    <p class="sub">คนซื้อไม่ใช่ผู้สูงอายุ แต่คือลูกหลาน สิ่งที่ขายจริงจึงคือการได้รู้ทุกวันว่าพ่อแม่กินยาแล้ว โดยไม่ต้องโทรถาม</p>
+    <div class="price">
+      <div><span>ต้นทุนต่อชิ้น</span><strong>1,254 ฿</strong><small>รวมโครงตู้และอิเล็กทรอนิกส์</small></div>
+      <div><span>ราคาขาย</span><strong>2,490 ฿</strong><small>ขายขาด ไม่มีค่ารายเดือน</small></div>
+      <div><span>ค่าใช้จ่ายต่อเนื่องของเรา</span><strong>0 ฿</strong><small>ตู้ส่ง LINE เอง ไม่มีเซิร์ฟเวอร์ให้ดูแล</small></div>
+    </div>
+    <p class="sub" style="margin-top:18px">
+      ลูกค้ากลุ่มแรกคือครอบครัวที่มีผู้สูงอายุกินยาประจำ ให้ทดลองใช้ฟรีสองสัปดาห์แล้วขายต่อด้วยการบอกต่อ
+      ช่องทางถัดไปคือร้านยาที่มีบริการจัดซองยาอยู่แล้ว ซึ่งเป็นบริการที่ลูกค้ากลับมาใช้ต่อเนื่อง
+    </p>
+  </div>
+</section>
+
+<section id="limit">
+  <div class="wrap">
+    <h2>สิ่งที่ระบบนี้ทำไม่ได้</h2>
+    <p class="sub">เราคิดว่าการบอกข้อจำกัดตรง ๆ น่าเชื่อถือกว่าการอ้างเกินจริง</p>
+    <div class="limits">
+      <div class="limit"><b>ยืนยันการกลืนยาไม่ได้</b>ระบบรู้ว่าซองถูกจ่าย ถูกหยิบ และถูกคืนเปล่า ซึ่งเป็นหลักฐานสี่ชั้นที่สอดคล้องกัน แต่ไม่ใช่การยืนยันว่ากลืนจริง ไม่มีอุปกรณ์ในราคานี้ทำได้</div>
+      <div class="limit"><b>ต้องใช้คู่กับซองยาแบ่งมื้อ</b>ถ้าเอายาเป็นแผงมาใส่เอง กลไกจ่ายจะทำงานไม่ได้ ข้อจำกัดนี้กลับเป็นข้อดีทางธุรกิจ เพราะทำให้จับมือกับร้านยาที่จัดซองได้</div>
+      <div class="limit"><b>หนึ่งรางเท่ากับหนึ่งมื้อ</b>ไม่แยกรายตัวยาภายในมื้อ แลกกับความเรียบง่ายและความน่าเชื่อถือของกลไก</div>
+      <div class="limit"><b>คำสั่งเสียงต้องใช้เน็ต</b>ถ้าเน็ตหลุด ตู้จะบอกให้กดปุ่มแทน ฟังก์ชันอื่นทั้งหมดยังทำงานครบ</div>
+    </div>
+  </div>
+</section>
+
+<section id="team">
+  <div class="wrap">
+    <h2>ทีมพัฒนา</h2>
+    <p class="sub">ปัญญาประดิษฐ์ประยุกต์และเทคโนโลยีอัจฉริยะ มหาวิทยาลัยบูรพา</p>
+    <div class="team">
+      <div class="member"><span>68160053</span> วัณณุวรรธน์ นพสมบูรณ์</div>
+      <div class="member"><span>68160203</span> ภัทรพล เครือแตง</div>
+      <div class="member"><span>68160382</span> เตชินท์ หิมทอง</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>PillProof — ต้นแบบโครงงาน ไม่ใช่เครื่องมือแพทย์</span>
+    <span class="refs">
+      <a href="https://aging.jmir.org/2023/1/e50990/" target="_blank" rel="noopener">JMIR Aging 2023</a>
+      <a href="https://support.herohealth.com/en/articles/8058271-how-does-the-hero-dispense-medications" target="_blank" rel="noopener">Hero dispenser</a>
+    </span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---- ขนาดชุดเดียวกับไฟล์ตัดเลเซอร์ ---- */
+var W=286,H=283,D=119,THK=3;
+var MW=58,MGAP=6,MARG=15;
+var BAND_BOT=56, TRAY_Y=62, TRAY_H=46, LED_Y=116, WIN_Y=126, WIN_H=81;
+var TOP_Y=221, TOPBAND=62, SPK_D=46;
+var TRAY_X=10, TRAY_W=W-104, RET_X=W-74, RET_W=62;
+function magX(i){return THK+MARG+i*(MW+MGAP);}
+function magC(i){return magX(i)+MW/2;}
+
+var C={shell:0xDCE2E1,frame:0xCAD4D3,inner:0xB4C0BF,glass:0xBAD2D6,
+       sachet:0xE6DBB0,tray:0xC6D0CF,flap:0xBFCACE,plate:0x0E7C7B,
+       speaker:0x232A2E,ledOff:0x6C787E,ledOn:0xE8A317,slot:0x333D3C,
+       btnG:0x2E9E4F,btnR:0xC0392B,btnB:0x2E6FB5,rail:0x9FACAB};
+
+var cv=document.getElementById("cv");
+var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+var scene=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(34,1,10,4000);
+scene.add(new THREE.HemisphereLight(0xffffff,0x93a0a0,0.72));
+var k1=new THREE.DirectionalLight(0xffffff,0.82); k1.position.set(320,500,640); scene.add(k1);
+var k2=new THREE.DirectionalLight(0xdcecec,0.30); k2.position.set(-480,220,340); scene.add(k2);
+
+var root=new THREE.Group(); scene.add(root);
+var cab=new THREE.Group(); cab.position.set(-W/2,-H/2,-D/2); root.add(cab);
+
+var mats={};
+function mat(k,c,o){ if(mats[k])return mats[k];
+  var p={color:c}; if(o)for(var q in o)p[q]=o[q];
+  return mats[k]=new THREE.MeshLambertMaterial(p); }
+function box(par,x,y,z,w,h,d,m){
+  var g=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  g.position.set(x+w/2,y+h/2,z+d/2); par.add(g); return g; }
+function cyl(par,x,y,z,r,l,m,ax){
+  var g=new THREE.Mesh(new THREE.CylinderGeometry(r,r,l,20),m);
+  if(ax==="z")g.rotation.x=Math.PI/2; if(ax==="x")g.rotation.z=Math.PI/2;
+  g.position.set(x,y,z); par.add(g); return g; }
+
+var mShell=mat("shell",C.shell), mFrame=mat("frame",C.frame), mInner=mat("inner",C.inner);
+box(cab,0,0,0,W,H,THK+3,mShell);
+box(cab,0,0,0,THK+3,H,D,mShell);
+box(cab,W-THK-3,0,0,THK+3,H,D,mShell);
+box(cab,0,0,0,W,THK+3,D,mShell);
+box(cab,0,H-THK-3,0,W,THK+3,D,mShell);
+
+/* ---- front face, built band by band so nothing overlaps ---- */
+var FZ=D-6;
+box(cab,0,TOP_Y,FZ, W,TOPBAND,6, mFrame);                        // top band
+box(cab,0,0,FZ, W,BAND_BOT,6, mFrame);                           // button band
+box(cab,0,BAND_BOT,FZ, W,TRAY_Y-BAND_BOT,6, mFrame);
+box(cab,0,TRAY_Y,FZ, TRAY_X,TRAY_H,6, mFrame);
+box(cab,TRAY_X+TRAY_W,TRAY_Y,FZ, RET_X-(TRAY_X+TRAY_W),TRAY_H,6, mFrame);
+box(cab,RET_X,TRAY_Y,FZ, RET_W,8,6, mFrame);
+box(cab,RET_X,TRAY_Y+34,FZ, RET_W,TRAY_H-34,6, mFrame);
+box(cab,RET_X+RET_W,TRAY_Y,FZ, W-RET_X-RET_W,TRAY_H,6, mFrame);
+box(cab,RET_X,TRAY_Y+8,FZ+2, RET_W,26,2, mat("slot",C.slot));     // return slot mouth
+box(cab,0,TRAY_Y+TRAY_H,FZ, W,WIN_Y-TRAY_Y-TRAY_H,6, mFrame);     // LED strip band
+
+/* window band: solid panel with one slit per magazine */
+var mGlass=mat("glass",C.glass,{transparent:true,opacity:0.3,depthWrite:false});
+var edge=0;
+for(var i=0;i<4;i++){
+  var sx=magC(i)-6.5;
+  box(cab,edge,WIN_Y,FZ, sx-edge,WIN_H,6, mFrame);
+  var gl=box(cab,sx,WIN_Y,FZ+2, 13,WIN_H,2, mGlass); gl.renderOrder=2;
+  edge=sx+13;
+}
+box(cab,edge,WIN_Y,FZ, W-edge,WIN_H,6, mFrame);
+
+/* speaker, plate, buttons, mic, LEDs */
+var SPK_CX=THK+MARG+MW/2, BAND_CY=TOP_Y+TOPBAND/2;
+cyl(cab,SPK_CX,BAND_CY,D+0.5,SPK_D/2,3,mat("spk",C.speaker),"z");
+for(var r=0;r<3;r++){
+  var tor=new THREE.Mesh(new THREE.TorusGeometry(SPK_D/2-5-r*6,1.3,8,34),mat("gr",0x3A4245));
+  tor.position.set(SPK_CX,BAND_CY,D+2.2); cab.add(tor);
+}
+var plX=SPK_CX+SPK_D/2+12;
+box(cab,plX,BAND_CY-15,D-0.5, W-plX-16,30,2, mat("plate",C.plate));
+var bxs=[W/2-72,W/2,W/2+72], bcol=[C.btnG,C.btnR,C.btnB];
+bxs.forEach(function(x,n){
+  cyl(cab,x,BAND_BOT/2,D+0.5,14,3,mat("ring",0x4A5358),"z");
+  cyl(cab,x,BAND_BOT/2,D+3.5,11.25,6,mat("b"+n,bcol[n]),"z");
+});
+for(var mh=0;mh<4;mh++) cyl(cab,W-30,BAND_BOT/2+12-mh*8,D+0.5,1.6,3,mat("spk",C.speaker),"z");
+var leds=[];
+for(var i2=0;i2<4;i2++) leds.push(cyl(cab,magC(i2),LED_Y,D+0.5,2.6,3,mat("led"+i2,C.ledOff),"z"));
+
+/* magazines + sachets behind the slits */
+var stacks=[];
+for(var i3=0;i3<4;i3++){
+  var x0=magX(i3), st=[];
+  box(cab,x0,WIN_Y-10,THK+8, 2,WIN_H+14,60, mInner);
+  box(cab,x0+MW-2,WIN_Y-10,THK+8, 2,WIN_H+14,60, mInner);
+  for(var s=0;s<7;s++)
+    st.push(box(cab,x0+3,WIN_Y+2+s*9,THK+10, MW-6,7.5,56, mat("sa",C.sachet)));
+  stacks.push(st);
+}
+
+/* tray + flap + a sachet that lands in it */
+var trayZ=D-6-52;
+box(cab,TRAY_X+4,TRAY_Y-5,trayZ, TRAY_W-8,5,52, mat("tray",C.tray));
+box(cab,TRAY_X+4,TRAY_Y,trayZ, 4,TRAY_H,52, mInner);
+box(cab,TRAY_X+TRAY_W-8,TRAY_Y,trayZ, 4,TRAY_H,52, mInner);
+box(cab,TRAY_X+4,TRAY_Y-8,THK+6, TRAY_W-8,4,70, mat("rail",C.rail));   // chute
+var flap=new THREE.Group(); flap.position.set(TRAY_X+6,TRAY_Y-2,D-4); cab.add(flap);
+box(flap,0,0,0, TRAY_W-12,TRAY_H+3,5, mat("flap",C.flap));
+box(flap,(TRAY_W-12)/2-24,TRAY_H-10,5, 48,6,3, mat("rail",C.rail));
+var drop=box(cab,0,0,0, MW-6,7.5,56, mat("sa",C.sachet)); drop.visible=false;
+
+/* ---- camera ---- */
+var cam={th:0.66,ph:1.24,r:900,tr:900};
+function fit(){
+  var b=cv.parentNode.getBoundingClientRect();
+  var w=Math.max(1,b.width|0), h=Math.max(1,b.height|0);
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+  var half=THREE.Math.degToRad(camera.fov)/2, rad=200;
+  cam.tr=Math.max(rad/Math.tan(half), rad/(Math.tan(half)*Math.max(0.4,camera.aspect)))*1.12;
+}
+function place(){
+  var st=Math.sin(cam.ph);
+  camera.position.set(cam.r*st*Math.sin(cam.th), cam.r*Math.cos(cam.ph), cam.r*st*Math.cos(cam.th));
+  camera.lookAt(0,0,0);
+}
+window.addEventListener("resize",fit);
+
+var drag=null;
+cv.addEventListener("pointerdown",function(e){
+  drag={x:e.clientX,y:e.clientY,t:cam.th,p:cam.ph};
+  cv.setPointerCapture(e.pointerId); cv.classList.add("dragging");
+});
+cv.addEventListener("pointermove",function(e){
+  if(!drag)return;
+  cam.th=drag.t-(e.clientX-drag.x)*0.0062;
+  cam.ph=Math.max(0.5,Math.min(2.2,drag.p-(e.clientY-drag.y)*0.0055));
+});
+function end(){ drag=null; cv.classList.remove("dragging"); }
+cv.addEventListener("pointerup",end); cv.addEventListener("pointercancel",end);
+
+/* ---- dispense demo ---- */
+var sayEl=document.getElementById("say"), sayTxt=document.getElementById("sayTxt"), tmo=null;
+function say(t){ sayTxt.textContent=t; sayEl.classList.add("on");
+  clearTimeout(tmo); tmo=setTimeout(function(){sayEl.classList.remove("on");},4600); }
+
+var MEAL=["มื้อเช้า","มื้อกลางวัน","มื้อเย็น","ก่อนนอน"];
+var st={run:false,i:0,t:0,phase:0}, flapA=0, flapT=0;
+document.getElementById("bGo").addEventListener("click",function(){
+  if(st.run) return;
+  var i=-1;
+  for(var k=0;k<4;k++) if(stacks[k].length){ i=k; break; }
+  if(i<0){ for(var k2=0;k2<4;k2++){ stacks[k2].forEach(function(s){s.visible=true;});
+           } say("เติมยาครบแล้วค่ะ พร้อมใช้งาน"); return; }
+  st={run:true,i:i,t:0,phase:1};
+  say("ถึงเวลา"+MEAL[i]+"แล้วค่ะ กำลังจ่ายยานะคะ");
+});
+
+var last=performance.now();
+function frame(now){
+  var dt=Math.min(0.05,(now-last)/1000); last=now;
+  cam.r+=(cam.tr-cam.r)*Math.min(1,dt*5);
+  if(!drag) cam.th+=dt*0.16;
+  place();
+
+  if(st.run){
+    st.t+=dt;
+    var m=stacks[st.i];
+    if(st.phase===1 && st.t>0.5){
+      var bot=m.shift();
+      if(bot){ bot.visible=false;
+        m.forEach(function(s,n){ s.position.y=WIN_Y+2+n*9+3.75; });
+        drop.visible=true;
+        drop.position.set(magC(st.i), WIN_Y+6, THK+10+28);
+      }
+      st.phase=2; st.t=0;
+    } else if(st.phase===2){
+      var e=Math.min(1,st.t/0.8); e=e*e*(3-2*e);
+      drop.position.x=magC(st.i)*(1-e)+(TRAY_X+TRAY_W/2)*e;
+      drop.position.y=(WIN_Y+6)*(1-e)+(TRAY_Y+8)*e;
+      drop.position.z=(THK+38)*(1-e)+(trayZ+26)*e;
+      if(e>=1){ st.phase=3; st.t=0; flapT=1; say("ยาอยู่ในถาดแล้วค่ะ หยิบได้เลยนะคะ"); }
+    } else if(st.phase===3 && st.t>2.6){
+      st.phase=4; st.t=0; flapT=0; drop.visible=false;
+      say("เรียบร้อยค่ะ อย่าลืมทิ้งซองเปล่าลงช่องคืนนะคะ");
+    } else if(st.phase===4 && st.t>1.2){ st.run=false; st.phase=0; }
+  }
+
+  flapA+=(flapT-flapA)*Math.min(1,dt*(reduce?30:5));
+  flap.rotation.x=flapA*1.15;
+
+  for(var i=0;i<4;i++){
+    var lm=leds[i].material, hot=(st.run&&st.i===i);
+    lm.color.setHex(hot?C.ledOn:C.ledOff);
+    lm.emissive.setHex(hot?0x7A4C06:0x000000);
+  }
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(frame);
+}
+fit(); place(); requestAnimationFrame(frame);
+setTimeout(function(){ say("ตู้พร้อมใช้งานค่ะ"); },900);
+})();
+</script>
+
+</body>
+</html>
