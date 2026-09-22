@@ -274,7 +274,7 @@ footer .refs{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
     </div>
     <div class="viewer">
       <canvas id="cv"></canvas>
-      <div class="vbadge mono">286 × 283 × 119 mm</div>
+      <div class="vbadge mono">286 × 297 × 119 mm</div>
       <div class="views" id="views" role="group" aria-label="มุมมอง">
         <button type="button" data-v="0" aria-pressed="true">ตู้ทั้งใบ</button>
         <button type="button" data-v="1" aria-pressed="false">ผ่าดูข้างใน</button>
@@ -353,7 +353,7 @@ footer .refs{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
       <div class="card">
         <h3>โครงสร้าง</h3>
         <dl class="kv">
-          <dt>ขนาดตู้</dt><dd>286 × 283 × 119 mm</dd>
+          <dt>ขนาดตู้</dt><dd>286 × 297 × 119 mm</dd>
           <dt>วัสดุ</dt><dd>อะคริลิก 3 mm</dd>
           <dt>ช่องเก็บยา</dt><dd>4 ราง (มื้อละราง)</dd>
           <dt>ความจุต่อราง</dt><dd>7 ซอง</dd>
@@ -439,11 +439,13 @@ footer .refs{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
 var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ===== ขนาดชุดเดียวกับไฟล์ตัดเลเซอร์ (มม.) ===== */
-var W=286,H=283,D=119,THK=3;
+var W=286,H=297,D=119,THK=3;
 var MW=58,MGAP=6,MARG=15;
-var BAND_BOT=56, TRAY_Y=62, TRAY_H=46, LED_Y=116, WIN_Y=126, WIN_H=81;
-var TOP_Y=221, TOPBAND=62, SPK_D=46;
-var TRAY_X=10, TRAY_W=W-104, RET_X=W-74, RET_W=62;
+var BAND_BOT=70, TRAY_Y=76, TRAY_H=46, LED_Y=130, WIN_Y=140, WIN_H=81;
+var TOP_Y=235, TOPBAND=62, SPK_D=46;
+var TRAY_X=10, TRAY_W=W-20;
+var RET_W=88, RET_H=30, RET_X=W-RET_W-12, RET_Y=22;
+var BTN_X=[46,96,146], BTN_Y=36;
 var FZ=D-6, trayZ=D-6-52;
 function magX(i){return THK+MARG+i*(MW+MGAP);}
 function magC(i){return magX(i)+MW/2;}
@@ -490,16 +492,16 @@ box(gShell,0,0,0,W,THK+3,D,mShell);
 box(gShell,0,H-THK-3,0,W,THK+3,D,mShell);
 
 /* ---------- หน้าตู้ ---------- */
-box(gFront,0,TOP_Y,FZ, W,TOPBAND,6, mFrame);
-box(gFront,0,0,FZ, W,BAND_BOT,6, mFrame);
+box(gFront,0,TOP_Y,FZ, W,TOPBAND,6, mFrame);                       // แถบบน
+box(gFront,0,0,FZ, RET_X,BAND_BOT,6, mFrame);                      // แถบล่าง ซ้ายช่องคืนซอง
+box(gFront,RET_X,0,FZ, RET_W,RET_Y,6, mFrame);                     // ใต้ช่องคืนซอง
+box(gFront,RET_X,RET_Y+RET_H,FZ, RET_W,BAND_BOT-RET_Y-RET_H,6, mFrame);
+box(gFront,RET_X+RET_W,0,FZ, W-RET_X-RET_W,BAND_BOT,6, mFrame);
+box(gFront,RET_X,RET_Y,FZ+2, RET_W,RET_H,2, mat("slot",C.slot));   // ปากช่องคืนซอง
 box(gFront,0,BAND_BOT,FZ, W,TRAY_Y-BAND_BOT,6, mFrame);
-box(gFront,0,TRAY_Y,FZ, TRAY_X,TRAY_H,6, mFrame);
-box(gFront,TRAY_X+TRAY_W,TRAY_Y,FZ, RET_X-(TRAY_X+TRAY_W),TRAY_H,6, mFrame);
-box(gFront,RET_X,TRAY_Y,FZ, RET_W,8,6, mFrame);
-box(gFront,RET_X,TRAY_Y+34,FZ, RET_W,TRAY_H-34,6, mFrame);
-box(gFront,RET_X+RET_W,TRAY_Y,FZ, W-RET_X-RET_W,TRAY_H,6, mFrame);
-box(gFront,RET_X,TRAY_Y+8,FZ+2, RET_W,26,2, mat("slot",C.slot));
-box(gFront,0,TRAY_Y+TRAY_H,FZ, W,WIN_Y-TRAY_Y-TRAY_H,6, mFrame);
+box(gFront,0,TRAY_Y,FZ, TRAY_X,TRAY_H,6, mFrame);                  // ขอบซ้ายถาด
+box(gFront,TRAY_X+TRAY_W,TRAY_Y,FZ, W-TRAY_X-TRAY_W,TRAY_H,6, mFrame);
+box(gFront,0,TRAY_Y+TRAY_H,FZ, W,WIN_Y-TRAY_Y-TRAY_H,6, mFrame);   // แถบ LED
 
 var mGlass=mat("glass",C.glass,{transparent:true,opacity:0.3,depthWrite:false});
 var edge=0;
@@ -518,12 +520,12 @@ for(var r=0;r<3;r++){
   tor.position.set(SPK_CX,BAND_CY,D+2.2); gFront.add(tor);
 }
 var plX=SPK_CX+SPK_D/2+12;
-box(gFront,plX,BAND_CY-15,D-0.5, W-plX-16,30,2, mat("plate",C.plate));
-[[W/2-72,C.btnG],[W/2,C.btnR],[W/2+72,C.btnB]].forEach(function(b,n){
-  cyl(gFront,b[0],BAND_BOT/2,D+0.5,14,3,mat("ring",0x4A5358),"z");
-  cyl(gFront,b[0],BAND_BOT/2,D+3.5,11.25,6,mat("b"+n,b[1]),"z");
+box(gFront,plX,BAND_CY-15,D-0.5, W-plX-40,30,2, mat("plate",C.plate));
+[C.btnG,C.btnR,C.btnB].forEach(function(col,n){
+  cyl(gFront,BTN_X[n],BTN_Y,D+0.5,14,3,mat("ring",0x4A5358),"z");
+  cyl(gFront,BTN_X[n],BTN_Y,D+3.5,11.25,6,mat("b"+n,col),"z");
 });
-for(var mh=0;mh<4;mh++) cyl(gFront,W-30,BAND_BOT/2+12-mh*8,D+0.5,1.6,3,mat("spk",C.speaker),"z");
+for(var mh=0;mh<4;mh++) cyl(gFront,W-22,BAND_CY+12-mh*8,D+0.5,1.6,3,mat("spk",C.speaker),"z");
 var leds=[];
 for(var i2=0;i2<4;i2++) leds.push(cyl(gFront,magC(i2),LED_Y,D+0.5,2.6,3,mat("led"+i2,C.ledOff),"z"));
 
@@ -546,7 +548,7 @@ for(var i3=0;i3<4;i3++){
 }
 
 /* ---------- ราง ถาดรับ ฝาถาด ---------- */
-box(cab,TRAY_X+4,TRAY_Y-8,THK+6, TRAY_W-8,4,72, mat("rail",C.rail));     // รางเอียง
+box(cab,THK+4,TRAY_Y-8,THK+6, W-2*THK-8,4,78, mat("rail",C.rail));       // รางเอียงเต็มความกว้าง ทุกรางหล่นลงได้
 box(cab,TRAY_X+4,TRAY_Y-5,trayZ, TRAY_W-8,5,52, mat("tray",C.tray));
 box(cab,TRAY_X+4,TRAY_Y,trayZ, 4,TRAY_H,52, mInner);
 box(cab,TRAY_X+TRAY_W-8,TRAY_Y,trayZ, 4,TRAY_H,52, mInner);
@@ -564,8 +566,8 @@ pin.userData.home=pin.position.z;
 box(gMech,solX+2,solY+13,solZ+4, 5,5,18, mat("wire",0xB5442E));
 box(gMech,TRAY_X+10,TRAY_Y+TRAY_H-14,D-22, 6,13,8, mat("reed",C.reed));  // reed ฝาถาด
 cyl(gMech,TRAY_X+TRAY_W/2,TRAY_Y+TRAY_H-6,trayZ+26, 3.5,8, mat("ir",C.ir),"y");
-box(gMech,RET_X+2,TRAY_Y-24,D-58, RET_W-4,4,48, mat("rail",C.rail));     // รางคืนซอง
-cyl(gMech,RET_X+RET_W/2,TRAY_Y-4,D-40, 3,7, mat("ir",C.ir),"y");
+box(gMech,RET_X+2,RET_Y-14,D-58, RET_W-4,4,46, mat("rail",C.rail));      // รางคืนซอง
+cyl(gMech,RET_X+RET_W/2,RET_Y+4,D-42, 3,7, mat("ir",C.ir),"y");
 box(gMech,THK+8,14,20, 140,28,4, mat("pcb",C.pcb));                      // บอร์ด
 box(gMech,THK+18,20,24, 48,18,11, mat("chip",C.chip));
 box(gMech,THK+76,20,24, 30,16,9, mat("mod",0x2C4A6B));
@@ -628,7 +630,7 @@ var TAGS=[
   {t:"แผ่นรับสลักบนฝา",    p:new THREE.Vector3(TRAY_X+TRAY_W-12, TRAY_Y+TRAY_H-14, D-10)},
   {t:"Reed switch ฝาถาด",  p:new THREE.Vector3(TRAY_X+13, TRAY_Y+TRAY_H-8, D-18)},
   {t:"IR ตรวจซองในถาด",    p:new THREE.Vector3(TRAY_X+TRAY_W/2, TRAY_Y+TRAY_H-2, trayZ+26)},
-  {t:"ช่องคืนซองเปล่า",     p:new THREE.Vector3(RET_X+RET_W/2, TRAY_Y+20, D+10)}
+  {t:"ช่องคืนซองเปล่า",     p:new THREE.Vector3(RET_X+RET_W/2, RET_Y+RET_H/2, D+10)}
 ];
 var tagEls=TAGS.map(function(t,i){
   var el=document.createElement("div");
@@ -716,7 +718,7 @@ function frame(now){
     } else if(st.phase===2){
       push[st.i]=Math.max(0,push[st.i]-dt*3);
       var e=Math.min(1,st.t/0.8); e=e*e*(3-2*e);
-      drop.position.x=magC(st.i)*(1-e)+(TRAY_X+TRAY_W/2)*e;
+      drop.position.x=magC(st.i);
       drop.position.y=(WIN_Y+6)*(1-e)+(TRAY_Y+8)*e;
       drop.position.z=(THK+38)*(1-e)+(trayZ+26)*e;
       if(e>=1){ st.phase=3; st.t=0; flapT=1; say("ยาอยู่ในถาดแล้วค่ะ หยิบได้เลยนะคะ"); }
