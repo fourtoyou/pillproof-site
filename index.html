@@ -357,6 +357,7 @@ footer .refs{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
           <dt>วัสดุ</dt><dd>อะคริลิก 3 mm</dd>
           <dt>ช่องเก็บยา</dt><dd>4 ราง (มื้อละราง)</dd>
           <dt>ความจุต่อราง</dt><dd>7 ซอง</dd>
+          <dt>เติมยา</dt><dd>ยกฝาบน ใส่จากด้านบน</dd>
           <dt>ช่องจ่าย</dt><dd>หนาซอง + 1 mm</dd>
           <dt>ตัวประมวลผล</dt><dd>ESP32 + WiFi</dd>
           <dt>แจ้งเตือน</dt><dd>LINE โดยตรง</dd>
@@ -489,7 +490,14 @@ box(gShell,0,0,0,W,H,THK+3,mShell);
 box(gShell,0,0,0,THK+3,H,D,mShell);
 box(gShell,W-THK-3,0,0,THK+3,H,D,mShell);
 box(gShell,0,0,0,W,THK+3,D,mShell);
-box(gShell,0,H-THK-3,0,W,THK+3,D,mShell);
+var LID_W=4*MW+3*MGAP+6, LID_D=79+10, LID_X=(W-LID_W)/2;
+box(gShell,0,H-THK-3,0, LID_X,THK+3,D, mShell);                       // แผ่นบน ซ้ายฝา
+box(gShell,LID_X+LID_W,H-THK-3,0, W-LID_X-LID_W,THK+3,D, mShell);     // แผ่นบน ขวาฝา
+box(gShell,LID_X,H-THK-3,0, LID_W,THK+3,14, mShell);                  // ขอบหน้า
+box(gShell,LID_X,H-THK-3,14+LID_D, LID_W,THK+3,D-14-LID_D, mShell);   // ขอบหลัง
+var lid=new THREE.Group(); lid.position.set(LID_X,H-THK-3,14+LID_D); gShell.add(lid);
+box(lid,0,0,-LID_D, LID_W,THK+3,LID_D, mat("lid",C.flap));                 // ฝาเติมยา บานพับหลัง
+box(lid,LID_W/2-26,THK+3,-LID_D+16, 52,3,8, mat("rail",C.rail));      // ช่องสอดนิ้ว
 
 /* ---------- หน้าตู้ ---------- */
 box(gFront,0,TOP_Y,FZ, W,TOPBAND,6, mFrame);                       // แถบบน
@@ -733,6 +741,8 @@ function frame(now){
   var gate=flapT===1?Math.max(0,pinT-0.4)/0.6:1;
   flapA+=(flapT*Math.min(1,gate)-flapA)*Math.min(1,dt*(reduce?30:5));
   flap.rotation.x=flapA*1.15;
+  lidA+=((view===1?1:0)-lidA)*Math.min(1,dt*(reduce?30:4));
+  lid.rotation.x=lidA*1.9;
 
   for(var i=0;i<4;i++){
     arms[i].position.z=arms[i].userData.home+push[i]*46;
@@ -745,6 +755,8 @@ function frame(now){
   updateTags();
   requestAnimationFrame(frame);
 }
+/* ฝาเติมยา: เปิดค้างไว้ในมุมมองผ่าดูข้างใน จะได้เห็นว่าใส่ซองจากด้านบน */
+var lidA=0;
 setView(0); fit(); place(); requestAnimationFrame(frame);
 setTimeout(function(){ say("ตู้พร้อมใช้งานค่ะ"); },900);
 })();
