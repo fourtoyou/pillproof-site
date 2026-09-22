@@ -36,13 +36,10 @@ img{max-width:100%}
     --ink:#E7EEEC; --ink-2:#A6B8B7; --ink-3:#778A8A;
     --line:#27373B; --line-2:#1F2C30;
     --accent:#3DB6B1; --accent-2:#63CFC9; --accent-soft:#113738;
-    --amber:#DFA martial; --amber-soft:#382C16;
+    --amber:#DFA84A; --amber-soft:#382C16;
     --stage-a:#0A1011; --stage-b:#182226;
     --shadow:0 1px 2px rgba(0,0,0,.45), 0 12px 34px rgba(0,0,0,.4);
   }
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){ --amber:#DFA84A; }
 }
 :root[data-theme="dark"]{
   --ground:#0D1416; --panel:#151E22; --panel-2:#1B2529; --sunk:#101819;
@@ -116,6 +113,26 @@ h1{
   background:color-mix(in srgb,var(--panel) 80%,transparent);
   border:1px solid var(--line); border-radius:999px; padding:4px 10px;
 }
+.views{
+  position:absolute; right:12px; top:12px; z-index:3; display:flex; gap:2px; padding:3px;
+  border-radius:9px; background:color-mix(in srgb,var(--panel) 88%,transparent);
+  border:1px solid var(--line); backdrop-filter:blur(8px);
+}
+.views button{
+  border:0; background:none; font:inherit; font-size:11.5px; color:var(--ink-2);
+  padding:5px 10px; border-radius:7px; cursor:pointer; white-space:nowrap;
+}
+.views button[aria-pressed="true"]{background:var(--accent); color:#fff}
+.views button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.tag{
+  position:absolute; z-index:2; transform:translate(-50%,-50%); pointer-events:none;
+  padding:3px 8px; border-radius:6px; white-space:nowrap; font-size:10.5px; font-weight:500;
+  background:var(--panel); color:var(--ink); border:1px solid var(--line);
+  box-shadow:0 2px 8px rgba(0,0,0,.16); opacity:0; transition:opacity .25s;
+}
+.tag.on{opacity:1}
+.tag b{color:var(--accent); font-family:"IBM Plex Mono",monospace; font-size:9.5px; margin-right:5px}
+@media (max-width:420px){ .views button{padding:5px 7px; font-size:11px} }
 .vsay{
   position:absolute; left:12px; right:12px; bottom:12px;
   background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent);
@@ -252,12 +269,17 @@ footer .refs{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
       </p>
       <div class="cta">
         <button class="btn solid" type="button" id="bGo">ลองสั่งจ่ายยา</button>
-        <a class="btn" href="https://claude.ai/artifact/28T6jwbdA5gkZdMy5YsYKK" target="_blank" rel="noopener">ดูกลไกภายในแบบละเอียด</a>
+        <button class="btn" type="button" id="bMech">ดูกลไกภายใน</button>
       </div>
     </div>
     <div class="viewer">
       <canvas id="cv"></canvas>
       <div class="vbadge mono">286 × 283 × 119 mm</div>
+      <div class="views" id="views" role="group" aria-label="มุมมอง">
+        <button type="button" data-v="0" aria-pressed="true">ตู้ทั้งใบ</button>
+        <button type="button" data-v="1" aria-pressed="false">ผ่าดูข้างใน</button>
+        <button type="button" data-v="2" aria-pressed="false">กลไกล็อก</button>
+      </div>
       <div class="vsay" id="say"><b>เสียงจากตู้</b><span id="sayTxt"></span></div>
     </div>
   </div>
@@ -416,21 +438,24 @@ footer .refs{margin-left:auto; display:flex; gap:14px; flex-wrap:wrap}
 "use strict";
 var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/* ---- ขนาดชุดเดียวกับไฟล์ตัดเลเซอร์ ---- */
+/* ===== ขนาดชุดเดียวกับไฟล์ตัดเลเซอร์ (มม.) ===== */
 var W=286,H=283,D=119,THK=3;
 var MW=58,MGAP=6,MARG=15;
 var BAND_BOT=56, TRAY_Y=62, TRAY_H=46, LED_Y=116, WIN_Y=126, WIN_H=81;
 var TOP_Y=221, TOPBAND=62, SPK_D=46;
 var TRAY_X=10, TRAY_W=W-104, RET_X=W-74, RET_W=62;
+var FZ=D-6, trayZ=D-6-52;
 function magX(i){return THK+MARG+i*(MW+MGAP);}
 function magC(i){return magX(i)+MW/2;}
 
 var C={shell:0xDCE2E1,frame:0xCAD4D3,inner:0xB4C0BF,glass:0xBAD2D6,
        sachet:0xE6DBB0,tray:0xC6D0CF,flap:0xBFCACE,plate:0x0E7C7B,
        speaker:0x232A2E,ledOff:0x6C787E,ledOn:0xE8A317,slot:0x333D3C,
-       btnG:0x2E9E4F,btnR:0xC0392B,btnB:0x2E6FB5,rail:0x9FACAB};
+       btnG:0x2E9E4F,btnR:0xC0392B,btnB:0x2E6FB5,rail:0x9FACAB,
+       servo:0x2C4A6B,arm:0xE8E4DA,solenoid:0x8A9392,pin:0xE4E9E8,
+       reed:0xB4BEC2,ir:0x9E3B33,pcb:0x14643B,chip:0x191F22,spring:0xC7A664};
 
-var cv=document.getElementById("cv");
+var cv=document.getElementById("cv"), stage=cv.parentNode;
 var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 var scene=new THREE.Scene();
@@ -441,6 +466,9 @@ var k2=new THREE.DirectionalLight(0xdcecec,0.30); k2.position.set(-480,220,340);
 
 var root=new THREE.Group(); scene.add(root);
 var cab=new THREE.Group(); cab.position.set(-W/2,-H/2,-D/2); root.add(cab);
+var gFront=new THREE.Group(); cab.add(gFront);     // หน้าตู้ — ซ่อนตอนผ่าดูข้างใน
+var gMech =new THREE.Group(); cab.add(gMech);      // กลไก — โชว์ตอนผ่า
+var gShell=new THREE.Group(); cab.add(gShell);
 
 var mats={};
 function mat(k,c,o){ if(mats[k])return mats[k];
@@ -455,93 +483,173 @@ function cyl(par,x,y,z,r,l,m,ax){
   g.position.set(x,y,z); par.add(g); return g; }
 
 var mShell=mat("shell",C.shell), mFrame=mat("frame",C.frame), mInner=mat("inner",C.inner);
-box(cab,0,0,0,W,H,THK+3,mShell);
-box(cab,0,0,0,THK+3,H,D,mShell);
-box(cab,W-THK-3,0,0,THK+3,H,D,mShell);
-box(cab,0,0,0,W,THK+3,D,mShell);
-box(cab,0,H-THK-3,0,W,THK+3,D,mShell);
+box(gShell,0,0,0,W,H,THK+3,mShell);
+box(gShell,0,0,0,THK+3,H,D,mShell);
+box(gShell,W-THK-3,0,0,THK+3,H,D,mShell);
+box(gShell,0,0,0,W,THK+3,D,mShell);
+box(gShell,0,H-THK-3,0,W,THK+3,D,mShell);
 
-/* ---- front face, built band by band so nothing overlaps ---- */
-var FZ=D-6;
-box(cab,0,TOP_Y,FZ, W,TOPBAND,6, mFrame);                        // top band
-box(cab,0,0,FZ, W,BAND_BOT,6, mFrame);                           // button band
-box(cab,0,BAND_BOT,FZ, W,TRAY_Y-BAND_BOT,6, mFrame);
-box(cab,0,TRAY_Y,FZ, TRAY_X,TRAY_H,6, mFrame);
-box(cab,TRAY_X+TRAY_W,TRAY_Y,FZ, RET_X-(TRAY_X+TRAY_W),TRAY_H,6, mFrame);
-box(cab,RET_X,TRAY_Y,FZ, RET_W,8,6, mFrame);
-box(cab,RET_X,TRAY_Y+34,FZ, RET_W,TRAY_H-34,6, mFrame);
-box(cab,RET_X+RET_W,TRAY_Y,FZ, W-RET_X-RET_W,TRAY_H,6, mFrame);
-box(cab,RET_X,TRAY_Y+8,FZ+2, RET_W,26,2, mat("slot",C.slot));     // return slot mouth
-box(cab,0,TRAY_Y+TRAY_H,FZ, W,WIN_Y-TRAY_Y-TRAY_H,6, mFrame);     // LED strip band
+/* ---------- หน้าตู้ ---------- */
+box(gFront,0,TOP_Y,FZ, W,TOPBAND,6, mFrame);
+box(gFront,0,0,FZ, W,BAND_BOT,6, mFrame);
+box(gFront,0,BAND_BOT,FZ, W,TRAY_Y-BAND_BOT,6, mFrame);
+box(gFront,0,TRAY_Y,FZ, TRAY_X,TRAY_H,6, mFrame);
+box(gFront,TRAY_X+TRAY_W,TRAY_Y,FZ, RET_X-(TRAY_X+TRAY_W),TRAY_H,6, mFrame);
+box(gFront,RET_X,TRAY_Y,FZ, RET_W,8,6, mFrame);
+box(gFront,RET_X,TRAY_Y+34,FZ, RET_W,TRAY_H-34,6, mFrame);
+box(gFront,RET_X+RET_W,TRAY_Y,FZ, W-RET_X-RET_W,TRAY_H,6, mFrame);
+box(gFront,RET_X,TRAY_Y+8,FZ+2, RET_W,26,2, mat("slot",C.slot));
+box(gFront,0,TRAY_Y+TRAY_H,FZ, W,WIN_Y-TRAY_Y-TRAY_H,6, mFrame);
 
-/* window band: solid panel with one slit per magazine */
 var mGlass=mat("glass",C.glass,{transparent:true,opacity:0.3,depthWrite:false});
 var edge=0;
 for(var i=0;i<4;i++){
   var sx=magC(i)-6.5;
-  box(cab,edge,WIN_Y,FZ, sx-edge,WIN_H,6, mFrame);
-  var gl=box(cab,sx,WIN_Y,FZ+2, 13,WIN_H,2, mGlass); gl.renderOrder=2;
+  box(gFront,edge,WIN_Y,FZ, sx-edge,WIN_H,6, mFrame);
+  var gl=box(gFront,sx,WIN_Y,FZ+2, 13,WIN_H,2, mGlass); gl.renderOrder=2;
   edge=sx+13;
 }
-box(cab,edge,WIN_Y,FZ, W-edge,WIN_H,6, mFrame);
+box(gFront,edge,WIN_Y,FZ, W-edge,WIN_H,6, mFrame);
 
-/* speaker, plate, buttons, mic, LEDs */
 var SPK_CX=THK+MARG+MW/2, BAND_CY=TOP_Y+TOPBAND/2;
-cyl(cab,SPK_CX,BAND_CY,D+0.5,SPK_D/2,3,mat("spk",C.speaker),"z");
+cyl(gFront,SPK_CX,BAND_CY,D+0.5,SPK_D/2,3,mat("spk",C.speaker),"z");
 for(var r=0;r<3;r++){
   var tor=new THREE.Mesh(new THREE.TorusGeometry(SPK_D/2-5-r*6,1.3,8,34),mat("gr",0x3A4245));
-  tor.position.set(SPK_CX,BAND_CY,D+2.2); cab.add(tor);
+  tor.position.set(SPK_CX,BAND_CY,D+2.2); gFront.add(tor);
 }
 var plX=SPK_CX+SPK_D/2+12;
-box(cab,plX,BAND_CY-15,D-0.5, W-plX-16,30,2, mat("plate",C.plate));
-var bxs=[W/2-72,W/2,W/2+72], bcol=[C.btnG,C.btnR,C.btnB];
-bxs.forEach(function(x,n){
-  cyl(cab,x,BAND_BOT/2,D+0.5,14,3,mat("ring",0x4A5358),"z");
-  cyl(cab,x,BAND_BOT/2,D+3.5,11.25,6,mat("b"+n,bcol[n]),"z");
+box(gFront,plX,BAND_CY-15,D-0.5, W-plX-16,30,2, mat("plate",C.plate));
+[[W/2-72,C.btnG],[W/2,C.btnR],[W/2+72,C.btnB]].forEach(function(b,n){
+  cyl(gFront,b[0],BAND_BOT/2,D+0.5,14,3,mat("ring",0x4A5358),"z");
+  cyl(gFront,b[0],BAND_BOT/2,D+3.5,11.25,6,mat("b"+n,b[1]),"z");
 });
-for(var mh=0;mh<4;mh++) cyl(cab,W-30,BAND_BOT/2+12-mh*8,D+0.5,1.6,3,mat("spk",C.speaker),"z");
+for(var mh=0;mh<4;mh++) cyl(gFront,W-30,BAND_BOT/2+12-mh*8,D+0.5,1.6,3,mat("spk",C.speaker),"z");
 var leds=[];
-for(var i2=0;i2<4;i2++) leds.push(cyl(cab,magC(i2),LED_Y,D+0.5,2.6,3,mat("led"+i2,C.ledOff),"z"));
+for(var i2=0;i2<4;i2++) leds.push(cyl(gFront,magC(i2),LED_Y,D+0.5,2.6,3,mat("led"+i2,C.ledOff),"z"));
 
-/* magazines + sachets behind the slits */
-var stacks=[];
+/* ---------- แม็กกาซีน + ซองยา + เซอร์โวดันซอง ---------- */
+var stacks=[], arms=[], left=[7,7,7,7];
+var mSachet=mat("sa",C.sachet);
 for(var i3=0;i3<4;i3++){
-  var x0=magX(i3), st=[];
+  var x0=magX(i3), stk=[];
   box(cab,x0,WIN_Y-10,THK+8, 2,WIN_H+14,60, mInner);
   box(cab,x0+MW-2,WIN_Y-10,THK+8, 2,WIN_H+14,60, mInner);
-  for(var s=0;s<7;s++)
-    st.push(box(cab,x0+3,WIN_Y+2+s*9,THK+10, MW-6,7.5,56, mat("sa",C.sachet)));
-  stacks.push(st);
+  box(cab,x0,WIN_Y-10,THK+8, MW,4,60, mat("gate",C.rail));          // พื้นราง
+  for(var sI=0;sI<7;sI++)
+    stk.push(box(cab,x0+3,WIN_Y+2+sI*9,THK+10, MW-6,7.5,56, mSachet));
+  stacks.push(stk);
+
+  box(gMech,x0+MW/2-11,WIN_Y-4,THK+1, 22,22,12, mat("servo",C.servo));   // เซอร์โว
+  var arm=box(gMech,x0+4,WIN_Y+1,THK+12, MW-8,6,8, mat("arm",C.arm));
+  arm.userData.home=arm.position.z; arms.push(arm);
+  cyl(gMech,x0+12,WIN_Y-4,THK+40, 3,7, mat("ir",C.ir),"y");              // IR นับซอง
 }
 
-/* tray + flap + a sachet that lands in it */
-var trayZ=D-6-52;
+/* ---------- ราง ถาดรับ ฝาถาด ---------- */
+box(cab,TRAY_X+4,TRAY_Y-8,THK+6, TRAY_W-8,4,72, mat("rail",C.rail));     // รางเอียง
 box(cab,TRAY_X+4,TRAY_Y-5,trayZ, TRAY_W-8,5,52, mat("tray",C.tray));
 box(cab,TRAY_X+4,TRAY_Y,trayZ, 4,TRAY_H,52, mInner);
 box(cab,TRAY_X+TRAY_W-8,TRAY_Y,trayZ, 4,TRAY_H,52, mInner);
-box(cab,TRAY_X+4,TRAY_Y-8,THK+6, TRAY_W-8,4,70, mat("rail",C.rail));   // chute
 var flap=new THREE.Group(); flap.position.set(TRAY_X+6,TRAY_Y-2,D-4); cab.add(flap);
 box(flap,0,0,0, TRAY_W-12,TRAY_H+3,5, mat("flap",C.flap));
 box(flap,(TRAY_W-12)/2-24,TRAY_H-10,5, 48,6,3, mat("rail",C.rail));
-var drop=box(cab,0,0,0, MW-6,7.5,56, mat("sa",C.sachet)); drop.visible=false;
+box(flap,TRAY_W-12-22,TRAY_H-20,-7, 12,14,7, mat("strike",0x98A3A2));    // แผ่นรับสลัก
+var drop=box(cab,0,0,0, MW-6,7.5,56, mSachet); drop.visible=false;
 
-/* ---- camera ---- */
-var cam={th:0.66,ph:1.24,r:900,tr:900};
-function fit(){
-  var b=cv.parentNode.getBoundingClientRect();
-  var w=Math.max(1,b.width|0), h=Math.max(1,b.height|0);
-  renderer.setSize(w,h,false);
-  camera.aspect=w/h; camera.updateProjectionMatrix();
-  var half=THREE.Math.degToRad(camera.fov)/2, rad=200;
-  cam.tr=Math.max(rad/Math.tan(half), rad/(Math.tan(half)*Math.max(0.4,camera.aspect)))*1.12;
+/* ---------- กลไกล็อกถาด ---------- */
+var solX=TRAY_X+TRAY_W-18, solY=TRAY_Y+TRAY_H-13, solZ=D-58;
+box(gMech,solX,solY-12,solZ, 24,24,26, mat("sol",C.solenoid));
+var pin=cyl(gMech,solX+12,solY,solZ+38,4,24, mat("pin",C.pin),"z");
+pin.userData.home=pin.position.z;
+box(gMech,solX+2,solY+13,solZ+4, 5,5,18, mat("wire",0xB5442E));
+box(gMech,TRAY_X+10,TRAY_Y+TRAY_H-14,D-22, 6,13,8, mat("reed",C.reed));  // reed ฝาถาด
+cyl(gMech,TRAY_X+TRAY_W/2,TRAY_Y+TRAY_H-6,trayZ+26, 3.5,8, mat("ir",C.ir),"y");
+box(gMech,RET_X+2,TRAY_Y-24,D-58, RET_W-4,4,48, mat("rail",C.rail));     // รางคืนซอง
+cyl(gMech,RET_X+RET_W/2,TRAY_Y-4,D-40, 3,7, mat("ir",C.ir),"y");
+box(gMech,THK+8,14,20, 140,28,4, mat("pcb",C.pcb));                      // บอร์ด
+box(gMech,THK+18,20,24, 48,18,11, mat("chip",C.chip));
+box(gMech,THK+76,20,24, 30,16,9, mat("mod",0x2C4A6B));
+box(gMech,THK+114,20,24, 26,14,8, mat("mod",0x2C4A6B));
+
+/* ===== มุมมอง ===== */
+var VIEWS=[
+  {th:0.66, ph:1.24, rad:200, tx:0,  ty:0,   tz:0},
+  {th:0.52, ph:1.20, rad:195, tx:0,  ty:6,   tz:0},
+  {th:0.90, ph:1.32, rad:92,  tx:52, ty:-58, tz:22}
+];
+var view=0;
+var cam={th:VIEWS[0].th, ph:VIEWS[0].ph, r:900, tr:900};
+var look=new THREE.Vector3(0,0,0), lookT=new THREE.Vector3(0,0,0);
+
+function fitDist(rad){
+  var half=THREE.Math.degToRad(camera.fov)/2;
+  return Math.max(rad/Math.tan(half), rad/(Math.tan(half)*Math.max(0.4,camera.aspect)))*1.14;
 }
 function place(){
   var st=Math.sin(cam.ph);
-  camera.position.set(cam.r*st*Math.sin(cam.th), cam.r*Math.cos(cam.ph), cam.r*st*Math.cos(cam.th));
-  camera.lookAt(0,0,0);
+  camera.position.set(look.x+cam.r*st*Math.sin(cam.th),
+                      look.y+cam.r*Math.cos(cam.ph),
+                      look.z+cam.r*st*Math.cos(cam.th));
+  camera.lookAt(look);
+}
+function fit(){
+  var b=stage.getBoundingClientRect();
+  var w=Math.max(1,b.width|0), h=Math.max(1,b.height|0);
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+  cam.tr=fitDist(VIEWS[view].rad);
 }
 window.addEventListener("resize",fit);
 
+function setView(v){
+  view=v;
+  var btns=document.querySelectorAll("#views button");
+  for(var i=0;i<btns.length;i++)
+    btns[i].setAttribute("aria-pressed", (+btns[i].dataset.v===v)?"true":"false");
+  var s=VIEWS[v];
+  cam.th=s.th; cam.ph=s.ph; cam.tr=fitDist(s.rad);
+  lookT.set(s.tx,s.ty,s.tz);
+  gFront.visible=(v===0);
+  gMech.visible=(v!==0);
+  gShell.visible=(v!==2);
+}
+document.querySelectorAll("#views button").forEach(function(b){
+  b.addEventListener("click",function(){ setView(+b.dataset.v); });
+});
+document.getElementById("bMech").addEventListener("click",function(){
+  setView(2);
+  stage.scrollIntoView({behavior: reduce?"auto":"smooth", block:"center"});
+});
+
+/* ===== ป้ายกำกับชิ้นส่วน (โชว์เฉพาะมุมมองกลไก) ===== */
+var TAGS=[
+  {t:"โซลินอยด์ล็อก 12 V", p:new THREE.Vector3(solX+12, solY+18, solZ+12)},
+  {t:"สลักขัดฝาถาด",       p:new THREE.Vector3(solX+12, solY, D-16)},
+  {t:"แผ่นรับสลักบนฝา",    p:new THREE.Vector3(TRAY_X+TRAY_W-12, TRAY_Y+TRAY_H-14, D-10)},
+  {t:"Reed switch ฝาถาด",  p:new THREE.Vector3(TRAY_X+13, TRAY_Y+TRAY_H-8, D-18)},
+  {t:"IR ตรวจซองในถาด",    p:new THREE.Vector3(TRAY_X+TRAY_W/2, TRAY_Y+TRAY_H-2, trayZ+26)},
+  {t:"ช่องคืนซองเปล่า",     p:new THREE.Vector3(RET_X+RET_W/2, TRAY_Y+20, D+10)}
+];
+var tagEls=TAGS.map(function(t,i){
+  var el=document.createElement("div");
+  el.className="tag"; el.innerHTML='<b>'+(i+1)+'</b>'+t.t;
+  stage.appendChild(el); return el;
+});
+var pv=new THREE.Vector3();
+function updateTags(){
+  var on=(view===2), b=stage.getBoundingClientRect();
+  for(var i=0;i<TAGS.length;i++){
+    var el=tagEls[i];
+    if(!on){ el.classList.remove("on"); continue; }
+    pv.copy(TAGS[i].p).add(cab.position).project(camera);
+    if(pv.z>1){ el.classList.remove("on"); continue; }
+    el.style.left=((pv.x*0.5+0.5)*b.width)+"px";
+    el.style.top=((-pv.y*0.5+0.5)*b.height)+"px";
+    el.classList.add("on");
+  }
+}
+
+/* ===== ลากหมุน / ซูม ===== */
 var drag=null;
 cv.addEventListener("pointerdown",function(e){
   drag={x:e.clientX,y:e.clientY,t:cam.th,p:cam.ph};
@@ -554,20 +662,32 @@ cv.addEventListener("pointermove",function(e){
 });
 function end(){ drag=null; cv.classList.remove("dragging"); }
 cv.addEventListener("pointerup",end); cv.addEventListener("pointercancel",end);
+cv.addEventListener("wheel",function(e){
+  e.preventDefault();
+  cam.tr=Math.max(110,Math.min(1400,cam.tr+e.deltaY*0.6));
+},{passive:false});
 
-/* ---- dispense demo ---- */
+/* ===== เดโมการจ่ายยา ===== */
 var sayEl=document.getElementById("say"), sayTxt=document.getElementById("sayTxt"), tmo=null;
 function say(t){ sayTxt.textContent=t; sayEl.classList.add("on");
   clearTimeout(tmo); tmo=setTimeout(function(){sayEl.classList.remove("on");},4600); }
 
 var MEAL=["มื้อเช้า","มื้อกลางวัน","มื้อเย็น","ก่อนนอน"];
-var st={run:false,i:0,t:0,phase:0}, flapA=0, flapT=0;
-document.getElementById("bGo").addEventListener("click",function(){
+var st={run:false,i:0,t:0,phase:0}, flapA=0, flapT=0, pinT=0, push=[0,0,0,0];
+var goBtn=document.getElementById("bGo");
+goBtn.addEventListener("click",function(){
   if(st.run) return;
   var i=-1;
-  for(var k=0;k<4;k++) if(stacks[k].length){ i=k; break; }
-  if(i<0){ for(var k2=0;k2<4;k2++){ stacks[k2].forEach(function(s){s.visible=true;});
-           } say("เติมยาครบแล้วค่ะ พร้อมใช้งาน"); return; }
+  for(var k=0;k<4;k++) if(left[k]>0){ i=k; break; }
+  if(i<0){                                   // ยาหมดทุกราง -> เติมใหม่
+    for(var k2=0;k2<4;k2++){
+      left[k2]=7;
+      stacks[k2].forEach(function(s){ s.visible=true; });
+    }
+    goBtn.textContent="ลองสั่งจ่ายยา";
+    say("เติมยาครบ 4 ช่องแล้วค่ะ พร้อมใช้งาน");
+    return;
+  }
   st={run:true,i:i,t:0,phase:1};
   say("ถึงเวลา"+MEAL[i]+"แล้วค่ะ กำลังจ่ายยานะคะ");
 });
@@ -576,21 +696,25 @@ var last=performance.now();
 function frame(now){
   var dt=Math.min(0.05,(now-last)/1000); last=now;
   cam.r+=(cam.tr-cam.r)*Math.min(1,dt*5);
-  if(!drag) cam.th+=dt*0.16;
+  look.lerp(lookT,Math.min(1,dt*5));
+  if(!drag && view===0) cam.th+=dt*0.16;
   place();
 
   if(st.run){
     st.t+=dt;
     var m=stacks[st.i];
-    if(st.phase===1 && st.t>0.5){
-      var bot=m.shift();
-      if(bot){ bot.visible=false;
-        m.forEach(function(s,n){ s.position.y=WIN_Y+2+n*9+3.75; });
+    if(st.phase===1){
+      push[st.i]=Math.min(1,st.t/0.5);
+      if(st.t>0.5){
+        left[st.i]--;
+        m[left[st.i]].visible=false;
         drop.visible=true;
         drop.position.set(magC(st.i), WIN_Y+6, THK+10+28);
+        if(left[0]+left[1]+left[2]+left[3]===0) goBtn.textContent="เติมยาใหม่";
+        st.phase=2; st.t=0;
       }
-      st.phase=2; st.t=0;
     } else if(st.phase===2){
+      push[st.i]=Math.max(0,push[st.i]-dt*3);
       var e=Math.min(1,st.t/0.8); e=e*e*(3-2*e);
       drop.position.x=magC(st.i)*(1-e)+(TRAY_X+TRAY_W/2)*e;
       drop.position.y=(WIN_Y+6)*(1-e)+(TRAY_Y+8)*e;
@@ -602,19 +726,24 @@ function frame(now){
     } else if(st.phase===4 && st.t>1.2){ st.run=false; st.phase=0; }
   }
 
-  flapA+=(flapT-flapA)*Math.min(1,dt*(reduce?30:5));
+  pinT+=(flapT-pinT)*Math.min(1,dt*(reduce?30:9));
+  pin.position.z=pin.userData.home-pinT*18;
+  var gate=flapT===1?Math.max(0,pinT-0.4)/0.6:1;
+  flapA+=(flapT*Math.min(1,gate)-flapA)*Math.min(1,dt*(reduce?30:5));
   flap.rotation.x=flapA*1.15;
 
   for(var i=0;i<4;i++){
+    arms[i].position.z=arms[i].userData.home+push[i]*46;
     var lm=leds[i].material, hot=(st.run&&st.i===i);
     lm.color.setHex(hot?C.ledOn:C.ledOff);
     lm.emissive.setHex(hot?0x7A4C06:0x000000);
   }
 
   renderer.render(scene,camera);
+  updateTags();
   requestAnimationFrame(frame);
 }
-fit(); place(); requestAnimationFrame(frame);
+setView(0); fit(); place(); requestAnimationFrame(frame);
 setTimeout(function(){ say("ตู้พร้อมใช้งานค่ะ"); },900);
 })();
 </script>
